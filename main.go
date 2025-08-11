@@ -42,7 +42,7 @@ func main() {
 	crawlerConfig := &crawler.CrawlerConfig{
 		MaxDepth:           1,
 		MaxConcurrentPages: 2,
-		RequestTimeout:     30 * time.Second,
+		RequestTimeout:     60 * time.Second,
 		UserAgent:          "Breeze-Search-Bot/1.0",
 	}
 	crawler := crawler.NewCrawler(crawlerConfig, domainManager, bleveIndex, badgerStore)

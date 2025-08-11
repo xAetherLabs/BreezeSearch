@@ -2,8 +2,8 @@
 /breeze-search
 
 # Data and Index directories
-/badger_data/
-/bleve_index/
+# /badger_data/
+# /bleve_index/
 
 # OS-specific
 .DS_Store

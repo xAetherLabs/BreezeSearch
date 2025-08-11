@@ -137,14 +137,27 @@ func (w *Worker) performCrawl(job core.CrawlJob) {
 	)
 
 	if err != nil {
-		result.Error = fmt.Errorf("chromedp rendering failed: %w", err)
+		log.Printf("Worker %d: Chromedp rendering failed for %s: %v. Falling back to direct HTML extraction.", w.id, job.URL, err)
+		// Fallback to direct HTML extraction if Chromedp fails
+		title, description, bodyText, links, contentHash, extractErr := w.extractor.ExtractContent(html)
+		if extractErr != nil {
+			result.Error = fmt.Errorf("chromedp rendering failed and direct extraction failed: %w, %w", err, extractErr)
+			w.resultChan <- result
+			return
+		}
+		result.Title = title
+		result.Description = description
+		result.BodyText = bodyText
+		result.Links = links
+		result.ContentHash = contentHash
+		result.Success = true // Mark as success if direct extraction worked
 		w.resultChan <- result
 		return
 	}
 
 	title, description, bodyText, links, contentHash, err := w.extractor.ExtractContent([]byte(finalHTML))
 	if err != nil {
-		result.Error = fmt.Errorf("failed to extract content: %w", err)
+		result.Error = fmt.Errorf("failed to extract content after chromedp: %w", err)
 		w.resultChan <- result
 		return
 	}
