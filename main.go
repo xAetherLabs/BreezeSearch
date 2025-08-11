@@ -34,7 +34,7 @@ func main() {
 	crawlerConfig := &crawler.CrawlerConfig{
 		MaxDepth:           1,
 		MaxConcurrentPages: 2,
-		RequestTimeout:     10 * time.Second,
+		RequestTimeout:     30 * time.Second,
 		UserAgent:          "Breeze-Search-Bot/1.0",
 	}
 
@@ -57,7 +57,7 @@ func main() {
 		crawler.EnqueueJob(core.CrawlJob{URL: domain.URL})
 	}
 
-	time.Sleep(20 * time.Second) // Wait for crawls to complete
+	time.Sleep(60 * time.Second) // Wait for crawls to complete
 
 	searcher := search.NewSearcher(bleveIndex, badgerStore)
 

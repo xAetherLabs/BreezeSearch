@@ -2,10 +2,8 @@ package crawler
 
 import (
 	"crypto/sha256"
-	"crypto/tls"
 	"fmt"
 	"log"
-	"net/http"
 	"sync"
 	"time"
 
@@ -13,8 +11,6 @@ import (
 	"breeze-search/domains"
 	"breeze-search/indexer"
 	"breeze-search/storage"
-	"github.com/gocolly/colly/v2"
-	"github.com/gocolly/colly/v2/extensions"
 )
 
 // CrawlerConfig holds configuration settings for the crawler.
@@ -23,7 +19,6 @@ type CrawlerConfig struct {
 	MaxConcurrentPages int
 	RequestTimeout     time.Duration
 	UserAgent          string
-	// Add more configuration as needed, e.g., rate limits per domain
 }
 
 // Crawler orchestrates the crawling process.
@@ -61,14 +56,12 @@ func NewCrawler(config *CrawlerConfig, dm *domains.DomainManager, idx indexer.Se
 func (c *Crawler) Start() {
 	log.Println("Crawler starting...")
 
-	// Start workers
 	for i := 0; i < c.config.MaxConcurrentPages; i++ {
-		worker := NewWorker(i+1, c.jobQueue, c.resultChan, c)
+		worker := NewWorker(i+1, c.config, c.jobQueue, c.resultChan, c.extractor, c.robotsHandler, &c.workerWg)
 		c.workers = append(c.workers, worker)
 		worker.Start()
 	}
 
-	// Goroutine to process crawl results
 	go c.processResults()
 
 	log.Printf("Crawler started with %d workers.", len(c.workers))
@@ -77,21 +70,15 @@ func (c *Crawler) Start() {
 // Stop gracefully stops the crawling process.
 func (c *Crawler) Stop() {
 	log.Println("Crawler stopping...")
-	close(c.quit) // Signal result processor to stop
+	close(c.quit)
 
-	// Signal workers to stop and close jobQueue
 	close(c.jobQueue)
 	for _, worker := range c.workers {
 		worker.Stop()
 	}
 
-	// Wait for all worker goroutines to finish
 	c.workerWg.Wait()
-
-	// Close resultChan only after all workers have finished sending results
 	close(c.resultChan)
-
-	// Wait for all results to be processed
 	c.wg.Wait()
 
 	log.Println("Crawler stopped.")
@@ -143,7 +130,7 @@ func (c *Crawler) handleCrawlResult(result core.CrawlResult) {
 		}
 
 		// Index the document
-		log.Printf("Indexing document: %+v", doc)
+		log.Printf("Indexing document: ID=%s, URL=%s, Title=%s, Description=%s, BodyTextLength=%d", doc.ID, doc.URL, doc.Title, doc.Description, len(doc.BodyText))
 		if err := c.indexer.Index(doc); err != nil {
 			log.Printf("Error indexing document %s: %v", doc.URL, err)
 			return
@@ -153,83 +140,5 @@ func (c *Crawler) handleCrawlResult(result core.CrawlResult) {
 
 	} else {
 		log.Printf("Failed to crawl %s: %v", result.URL, result.Error)
-		// Handle crawl failure gracefully, e.g., update domain status
 	}
 }
-
-// CrawlURL performs the actual HTTP request and content extraction.
-func (c *Crawler) CrawlURL(job core.CrawlJob) core.CrawlResult {
-	result := core.CrawlResult{
-		URL:         job.URL,
-		Success:     false,
-		LastCrawled: time.Now(),
-	}
-
-	// Check robots.txt
-	if !c.robotsHandler.CanFetch(job.URL) {
-		result.Error = fmt.Errorf("crawling disallowed by robots.txt")
-		return result
-	}
-
-	collyCollector := colly.NewCollector(
-		colly.MaxDepth(c.config.MaxDepth),
-		colly.UserAgent(c.config.UserAgent),
-		colly.AllowURLRevisit(), // Allow crawling the same URL multiple times
-	)
-
-	// Set request timeout
-	collyCollector.SetClient(&http.Client{
-		Timeout: c.config.RequestTimeout,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // For development, ignore invalid certs
-		},
-	})
-
-	// Randomize user agent (optional, but good practice)
-	extensions.RandomUserAgent(collyCollector)
-
-	// Set error handler
-	collyCollector.OnError(func(r *colly.Response, err error) {
-		result.Error = fmt.Errorf("request failed: %w", err)
-		result.StatusCode = r.StatusCode
-		log.Printf("Error crawling %s: %v (Status: %d)", r.Request.URL.String(), err, r.StatusCode)
-	})
-
-	// Set HTML callback for content extraction
-	collyCollector.OnHTML("html", func(e *colly.HTMLElement) {
-		htmlContent, err := e.DOM.Html()
-		if err != nil {
-			result.Error = fmt.Errorf("failed to get HTML content: %w", err)
-			return
-		}
-
-		title, description, bodyText, links, contentHash, err := c.extractor.ExtractContent([]byte(htmlContent))
-		if err != nil {
-			result.Error = fmt.Errorf("failed to extract content: %w", err)
-			return
-		}
-
-		result.Title = title
-		result.Description = description
-		result.BodyText = bodyText
-		result.Links = links
-		result.ContentHash = contentHash
-		result.Success = true
-		result.StatusCode = e.Response.StatusCode
-	})
-
-	// Visit the URL
-	err := collyCollector.Visit(job.URL)
-	if err != nil {
-		// If error was already set by OnError, don't overwrite
-		if result.Error == nil {
-			result.Error = fmt.Errorf("colly visit error: %w", err)
-		}
-	}
-
-	collyCollector.Wait() // Wait for the crawl to finish
-
-	return result
-}
-
-
