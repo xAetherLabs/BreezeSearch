@@ -81,5 +81,28 @@
         "Taiyo Robotics (NFT Project)": "Official NFT project website not found (taiyo.ai is an AI company).",
         "Bonk (Meme Coin)": "https://bonk.xyz/",
         "Dogwifhat (Meme Coin)": "https://wif.dog/"
+    },
+    "General Knowledge": {
+        "Wikipedia (General)": "https://www.wikipedia.org/",
+        "Wikipedia (Solana)": "https://en.wikipedia.org/wiki/Solana_(blockchain_platform)",
+        "Cryptocurrency - Wikipedia": "https://en.wikipedia.org/wiki/Cryptocurrency",
+        "Blockchain - Wikipedia": "https://en.wikipedia.org/wiki/Blockchain"
+    },
+    "More Solana Knowledge": {
+        "Solana Learn (official learning series)": "https://solana.com/learn",
+        "QuickNode Solana Fundamentals Reference": "https://www.quicknode.com/guides/solana-development/getting-started/solana-fundamentals-reference-guide",
+        "Chainstack Ultimate Solana Developer Guide": "https://chainstack.com/ultimate-solana-developer-guide/",
+        "Figment Solana 101 (Figment.io)": "https://learn.figment.io/protocols/solana",
+        "Solana Programming Resources (GitHub)": "https://github.com/SolanaNatives/Solana-Programming-Resources",
+        "Solana Developer Guides": "https://solana.com/developers/guides",
+        "Solana Compass Documentation Hub": "https://solanacompass.com/projects/category/infrastructure/documentation",
+        "Gate.io Solana Course Roadmap": "https://www.gate.com/learn/articles/solana-course-the-ultimate-guide-to-learning-developing-and-mastering-blockchain-skills/7746",
+        "Awesome-Solana GitHub List": "https://github.com/csjcode/awesome-solana",
+        "Solana Video Intro (School of Solana)": "https://www.youtube.com/watch?v=cpCPkqtzFAQ",
+        "Reddit-curated Beginner Guide (Solana)": "https://www.reddit.com/r/solana/comments/1iouj61/getting_started_on_solana_updated_guide_by/",
+        "Coinmetro Guide to Solana": "https://www.coinmetro.com/learning-lab/understanding-solana-a-beginners-guide",
+        "ArXiv: Characterizing the Solana NFT Ecosystem": "https://arxiv.org/abs/2403.10879",
+        "ArXiv: Solana Smart Contract Vulnerabilities": "https://arxiv.org/abs/2504.07419",
+        "ArXiv: Decentralization Comparison (Bitcoin/Ethereum/Solana)": "https://arxiv.org/abs/2404.04841"
     }
 }
