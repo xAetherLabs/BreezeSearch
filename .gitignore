@@ -7,3 +7,5 @@
 
 # OS-specific
 .DS_Store
+
+render.yaml
