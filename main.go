@@ -49,7 +49,12 @@ func main() {
 
 	// 3. Initialize and start the API server
 	api := search.NewAPI(searcher, crawler, domainManager)
-	server := &http.Server{Addr: ":8080"}
+	port := os.Getenv("PORT")
+	if port == "" {
+    		port = "8080" // fallback for local runs
+	}
+	server := &http.Server{Addr: ":" + port}
+
 
 	go func() {
 		log.Println("Starting server on :8080")
