@@ -47,34 +47,40 @@ func main() {
 	}
 	crawler := crawler.NewCrawler(crawlerConfig, domainManager, bleveIndex, badgerStore)
 
-	// 3. Initialize and start the API server
-	api := search.NewAPI(searcher, crawler, domainManager)
+	// 3. Determine port (Render provides PORT via env var)
 	port := os.Getenv("PORT")
 	if port == "" {
-    		port = "8080" // fallback for local runs
+		port = "8080" // local default
 	}
-	server := &http.Server{Addr: ":" + port}
+	server := &http.Server{
+		Addr: ":" + port,
+	}
 
-
+	// 4. Start API server
 	go func() {
-		log.Println("Starting server on :8080")
+		log.Printf("Starting server on :%s\n", port)
+		api := search.NewAPI(searcher, crawler, domainManager)
 		api.RegisterRoutes()
+
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Could not start server: %v", err)
 		}
 	}()
 
-	// 4. Wait for a shutdown signal
+	// 5. Graceful shutdown on interrupt/terminate
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
 	<-stopChan
 
 	log.Println("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// Allow up to 10s for cleanup
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	// Shut down HTTP server
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Server shutdown failed: %v", err)
+		log.Printf("Server shutdown failed: %v", err)
 	}
 
 	log.Println("Server stopped gracefully.")
